@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "NuFZxakoX3HhqlV9e7/iGBYVRrI=",
+			"path": "github.com/smartystreets/goconvey",
+			"revision": "99f2b1e01343c8bc2d9d12f1194d2d68ce18b063",
+			"revisionTime": "2016-02-27T15:26:14Z"
+		}
+	],
+	"rootPath": "github.com/piotrjaromin/perceptron"
+}
