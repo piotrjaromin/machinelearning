@@ -13,7 +13,7 @@ import (
 
 func TestSpec(t *testing.T) {
 
-	const learningRate = 0.01
+	const learningRate = 0.25
 	const amountOfIter = 10
 
 	Convey("Perceptron should correctly learn to recognize setosa and versicolor", t, func() {
@@ -32,13 +32,16 @@ func TestSpec(t *testing.T) {
 		notLearnedResults = append(notLearnedResults, expResults[90:]...)
 		weights := InitWeights(4, 10)
 
-		p := NewPerceptron(learningRate, HeavySideStepFunc)
+		p := NewPerceptron(learningRate, HeavySideStepFunc, weights)
 
-		weights = p.Process(weights, learningDataSet, learnedResults, amountOfIter)
+		errors, iterationsDone := p.Process(learningDataSet, learnedResults, amountOfIter)
 		
+		log.Printf("errors during processing %d\n", errors)
+		log.Printf("iterations done %d\n", iterationsDone)
+
 		//Check if it can predict correctly on unseen data
 		for dataIndex := 0; dataIndex < len(notLearnedResults); dataIndex++ {
-			evalResult := p.Evaluate(weights, notLearnedDataSet[dataIndex])
+			evalResult := p.Evaluate(notLearnedDataSet[dataIndex])
 			So(evalResult, ShouldEqual, notLearnedResults[dataIndex])
 		}
 	})
