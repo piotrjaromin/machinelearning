@@ -13,22 +13,23 @@ type ResultSet []float64
 
 type ActivationFunc func(float64)float64
 
-type perceptron struct {
+type Perceptron struct {
 	learningRate float64
 	activationFunc ActivationFunc
 	weights Weights
 	totalErrors int
 }
 
-func NewPerceptron(learningRate float64, activationFunc ActivationFunc, weights Weights,) perceptron {
-	return perceptron{
+//NewPerceptron creates new perceptron instance 
+func NewPerceptron(learningRate float64, activationFunc ActivationFunc, weights Weights,) Perceptron {
+	return Perceptron{
 		learningRate: learningRate,
 		activationFunc: activationFunc,
 		weights: weights,
 	}
 }
 
-func (p *perceptron) Process( learningDataSet DataSet, expectedResult ResultSet, iterations int) (amountOfErrors, iterationsDone int) {
+func (p *Perceptron) Process( learningDataSet DataSet, expectedResult ResultSet, iterations int) (amountOfErrors, iterationsDone int) {
 	for ; iterationsDone < iterations; iterationsDone++ {
 		iterErrors := p.ProcessOnce(learningDataSet, expectedResult)
 		if iterErrors == 0 {
@@ -41,7 +42,7 @@ func (p *perceptron) Process( learningDataSet DataSet, expectedResult ResultSet,
 	return amountOfErrors, iterationsDone
 }
 
-func (p *perceptron) ProcessOnce(dataSet DataSet, expectedResult ResultSet) (amountOfErrors int) {
+func (p *Perceptron) ProcessOnce(dataSet DataSet, expectedResult ResultSet) (amountOfErrors int) {
 
 	currentErrors := p.totalErrors;
 	for index, dataLine := range dataSet {
@@ -51,17 +52,19 @@ func (p *perceptron) ProcessOnce(dataSet DataSet, expectedResult ResultSet) (amo
 	return p.totalErrors - currentErrors
 }
 
-func (p *perceptron) ProcessOneDataLine(dataLine DataLine, expectedResult float64) {
+func (p *Perceptron) ProcessOneDataLine(dataLine DataLine, expectedResult float64) {
 
 	resultError := expectedResult - p.Evaluate(dataLine)
 	updatedWeights := make(Weights, len(p.weights))
 
-	for index, weight := range p.weights {
+	//because x_0 = 1
+	updatedWeights[0] = p.learningRate*resultError
+	for index, weight := range p.weights[1:] {
 		// delta_w = learningRate * (y - y') * x_i
 		delta := p.learningRate*(resultError)*dataLine[index]
 
 		// w_i = w_i + delta_w
-		updatedWeights[index] = weight + delta
+		updatedWeights[index + 1] = weight + delta
 	}
 
 	if (resultError != 0) {
@@ -71,20 +74,21 @@ func (p *perceptron) ProcessOneDataLine(dataLine DataLine, expectedResult float6
 	p.weights = updatedWeights
 }
 
-func (p perceptron) Evaluate(dataLine DataLine) float64 { 
-	if len(p.weights) != len(dataLine) {
-		log.Panic("weights should have the same length as dataLine")
+func (p Perceptron) Evaluate(dataLine DataLine) float64 { 
+	//weight with zero index is for x_0=1
+	if len(p.weights) != len(dataLine) + 1 {
+		log.Panic("weights should len(weights) == len(dataLine) + 1")
 	}
 
-	result := 0.0
+	result := p.weights[0]
 	for index, dataVar := range dataLine {
-		result += dataVar*p.weights[index]
+			result += dataVar*p.weights[index + 1]
 	}
 
 	return p.activationFunc(result)
 }
 
-func (p perceptron) TotalErrors() int {
+func (p Perceptron) TotalErrors() int {
 	return p.totalErrors
 }
 

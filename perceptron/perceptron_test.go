@@ -15,6 +15,7 @@ func TestSpec(t *testing.T) {
 
 	const learningRate = 0.25
 	const amountOfIter = 10
+	const weightDivider = 10
 
 	Convey("Perceptron should correctly learn to recognize setosa and versicolor", t, func() {
 
@@ -30,7 +31,7 @@ func TestSpec(t *testing.T) {
 
 		notLearnedResults := expResults[40:49]
 		notLearnedResults = append(notLearnedResults, expResults[90:]...)
-		weights := InitWeights(4, 10)
+		weights := InitWeights(5, weightDivider)
 
 		p := NewPerceptron(learningRate, HeavySideStepFunc, weights)
 
