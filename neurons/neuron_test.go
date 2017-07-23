@@ -1,4 +1,4 @@
-package perceptron
+package neurons
 
 import (
 	. "github.com/smartystreets/goconvey/convey"
@@ -9,17 +9,33 @@ import (
 	"bufio"
 	"io"
 	"strconv"
+	m "github.com/piotrjaromin/machine-learning/model"
 )
 
 func TestSpec(t *testing.T) {
 
-	const learningRate = 0.25
-	const amountOfIter = 10
 	const weightDivider = 10
+	const amountOfIter = 10
+	weights := m.InitWeights(5, weightDivider)
 
 	Convey("Perceptron should correctly learn to recognize setosa and versicolor", t, func() {
-
+		const learningRate = 0.25
 		wholeDataSet, expResults := readData()
+		p := NewPerceptron(learningRate, m.HeavySideStepFunc, weights)
+		testNeuron(&p, wholeDataSet, expResults, amountOfIter)
+	})
+
+	Convey("Adaline should correctly learn to recognize setosa and versicolor", t, func() {
+		const learningRate = 0.0001
+		wholeDataSet, expResults := readData()
+		p := NewAdaline(learningRate, m.HeavySideStepFunc, weights)
+		testNeuron(&p, wholeDataSet, expResults, amountOfIter)
+	})
+
+}
+
+func testNeuron(n Neuron,  wholeDataSet m.DataSet, expResults []float64, amountOfIter int) {
+
 		learningDataSet := wholeDataSet[:40]
 		learningDataSet = append(learningDataSet, wholeDataSet[50:90]...)
 
@@ -31,35 +47,19 @@ func TestSpec(t *testing.T) {
 
 		notLearnedResults := expResults[40:49]
 		notLearnedResults = append(notLearnedResults, expResults[90:]...)
-		weights := InitWeights(5, weightDivider)
 
-		p := NewPerceptron(learningRate, HeavySideStepFunc, weights)
-
-		errors, iterationsDone := p.Process(learningDataSet, learnedResults, amountOfIter)
+		errors, iterationsDone := Teach(n, learningDataSet, learnedResults, amountOfIter)
 		
 		log.Printf("errors during processing %d\n", errors)
 		log.Printf("iterations done %d\n", iterationsDone)
-
 		//Check if it can predict correctly on unseen data
 		for dataIndex := 0; dataIndex < len(notLearnedResults); dataIndex++ {
-			evalResult := p.Evaluate(notLearnedDataSet[dataIndex])
+			evalResult := n.Evaluate(notLearnedDataSet[dataIndex])
 			So(evalResult, ShouldEqual, notLearnedResults[dataIndex])
 		}
-	})
-
-	Convey("HeavySideFunc should return correct values", t, func() {
-
-		So(HeavySideStepFunc(-0.5), ShouldEqual, -1)
-		So(HeavySideStepFunc(-10), ShouldEqual, -1)
-		So(HeavySideStepFunc(-4), ShouldEqual, -1)
-		So(HeavySideStepFunc(0), ShouldEqual, 1)
-		So(HeavySideStepFunc(1), ShouldEqual, 1)
-		So(HeavySideStepFunc(.01), ShouldEqual, 1)
-	})
-
 }
 
-func readData() (dataSet DataSet, expectedResults []float64) {
+func readData() (dataSet m.DataSet, expectedResults []float64) {
 
 	file, err := os.Open("./setosa_versicolor.data")
 	if err != nil {
@@ -78,7 +78,7 @@ func readData() (dataSet DataSet, expectedResults []float64) {
 			log.Panic("Coult not read data line", err)
 		}
 
-		dataLine := DataLine{}
+		dataLine := m.DataLine{}
 		recordLen := len(record)
 		for index := 0; index < recordLen - 1; index++ {
 			val, err := strconv.ParseFloat(record[index], 64)
